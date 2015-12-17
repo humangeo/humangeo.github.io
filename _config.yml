@@ -1,55 +1,22 @@
-# Site Info
-title:              "HumanGeo Data Blog"
-description:        ""
-google_verify:      epFgX0s_0RM3CdjwFcsewfXzPov2g8s9ZBOLyaIUH-o # Put your Google Verification here
-google_analytics:   UA-XXXXXXX-X # Put your Google Analytics code
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely need to edit after that.
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'jekyll serve'. If you change this file, please restart the server process.
 
-# Author Info
-author_name:        "HumanGeo"
-author_email:       mla@thehumangeo.com
-author_gravatar:    2b38b1b0e7e08b69379bd61582adf0c8 # Gravatar md5 hash
-twitter_username:   thehumangeo
+# Site settings
+title: HumanGeo Data Blog
+email: mla@thehumangeo.com
+description: > # this means to ignore newlines until "baseurl:"
+  The HumanGeo Data blog is focused on highlighting interesting Data Science
+  and Engineering problems. We appreciate feedback and would like to hear from
+  you. If these problems interest you and you are looking for a job, let us know
+  because we are hiring.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "http://humangeo.github.io" # the base hostname & protocol for your site
+twitter_username: thehumangeo
+github_username:  humangeo
 
-# Site Settings
-baseurl:            "" # Base URL must end WITHOUT a slash, default: ""
-permalink:          /notes/:title # Post permalink
-timezone:           America/New_York # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-
-# Site Build
-highlighter:        pygments
-#markdown:           redcarpet
-#redcarpet:
-#    extensions:     ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data", "highlight", "footnotes"]
-markdown:           kramdown
-kramdown:
-    input:          GFM
-sass:
-    style:          :compressed
-
-# Other Params
-include:            [ "robots.txt" ]
-exclude:            [ "LICENSE", "README.md", "CNAME", "vendor", "Gemfile" ]
-gems:
-  - jekyll-sitemap
-
-compress_html:
-    clippings:      all
-    ingore:
-        envs:       [ "test" ]
-
-defaults:
-  -
-    scope:
-      path:         ""
-    values:
-      layout:       "null"
-  -
-    scope:
-      type:         "pages"
-    values:
-      layout:       "page"
-  -
-    scope:
-      type:         "posts"
-    values:
-      layout:       "post"
+# Build settings
+markdown: kramdown

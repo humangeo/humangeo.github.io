@@ -4,7 +4,7 @@ function make_matrix(matrix_name){
   var margin = {top: 80, right: 0, bottom: 10, left: 80}, width = 720, height = 720;
 
   var x = d3.scale.ordinal().rangeBands([0, width]),
-      z = d3.scale.linear().domain([0, 4]).clamp(true),
+      z = d3.scale.linear().domain([0.00, .01, .8]).range([.2, .5 ,1.0]).clamp(true),
       c = d3.scale.category10().domain(d3.range(10));
 
   var svg = d3.select("body").append("svg")
@@ -14,32 +14,43 @@ function make_matrix(matrix_name){
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+  d3.csv("/download/" + matrix_name, function(rows) {
+    var master = {};
 
-  var fileroot = "file:///Users/mahmoud/Downloads/the-plain-master/assets/download/";
-  fileroot = "/assets/download/";
-  // fileroot = "http://localhost:8000/download/";
-  d3.json(fileroot + matrix_name, function(miserables) {
-    alert(miserables);
     var matrix = [],
-        nodes = miserables.nodes,
-        n = nodes.length;
+        nodes = [],
+        nodes_map = {},
+        n = rows.length;
 
-    // Compute index per node.
-    nodes.forEach(function(node, i) {
-      node.index = i;
-      node.count = 0;
-      matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+
+    var columns;
+
+
+    rows.forEach(function(row, i){
+      var code = row.code;
+      delete row.code;
+      columns = Object.keys(row);
+      var m = columns.length;
+      nodes[i] = {"name":code, "count":0, "group":0, "index":i};
+      matrix[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });
+      var total = 1.0 * Object.keys(row).map(function(key){return +row[key];}).reduce(function(a, b) {return a + b;});
+      columns.forEach(function(key){
+        var prev_val = row[key];
+        row[key] =(row[key]*1.0)/ total;
+        matrix[i][col_map[key]].z = row[key];
+        nodes[i].count += prev_val;
+      });
+
+      master[code] = row;
+      nodes_map[code] = i;
+
     });
 
-    // Convert links to matrix; count character occurrences.
-    miserables.links.forEach(function(link) {
-      matrix[link.source][link.target].z += link.value;
-      matrix[link.target][link.source].z += link.value;
-      matrix[link.source][link.source].z += link.value;
-      matrix[link.target][link.target].z += link.value;
-      nodes[link.source].count += link.value;
-      nodes[link.target].count += link.value;
-    });
+    var columns = Object.keys(master["en"]);
+    var col_map = columns.reduce(function(o, v, i) {o[v] = i; return o; }, {});
+    var m = columns.length;
+
+
 
     // Precompute the orders.
     var orders = {
@@ -58,7 +69,7 @@ function make_matrix(matrix_name){
 
     var row = svg.selectAll(".row")
         .data(matrix)
-      .enter().append("g")
+        .enter().append("g")
         .attr("class", "row")
         .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
         .each(row);
@@ -141,4 +152,4 @@ function make_matrix(matrix_name){
   });
 }
 
-make_matrix("id_matrx.csv");
+make_matrix("id_matrix.csv");

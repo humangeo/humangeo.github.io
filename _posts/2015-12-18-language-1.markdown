@@ -1,6 +1,8 @@
 ---
+layout: post
 title: Voulez vous Language Detection? Part 1
-updated: 2015-12-14
+date:   2015-12-16 12:17:58 -0500
+categories: jekyll update
 ---
 
 ## Voulez vous Language Detection? Part 1
@@ -40,4 +42,4 @@ These numbers mean English (en) is twice as likely than Spanish (es) to being th
 
 </aside>
 
-<script src="assets/make_matrix.js"></script>
+<script src="/download/make_matrix.js"></script>
