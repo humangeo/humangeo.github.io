@@ -37,7 +37,7 @@ These numbers mean English (en) is twice as likely than Spanish (es) to being th
 <p>Order: <select id="order">
   <option value="name">by Name</option>
   <option value="count">by Frequency</option>
-  <option value="group">by Cluster</option>
+  <!-- <option value="group">by Cluster</option> -->
 </select>
 
 </aside>

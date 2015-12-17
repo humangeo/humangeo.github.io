@@ -1,7 +1,7 @@
 
 function make_matrix(matrix_name){
 
-  var margin = {top: 80, right: 0, bottom: 10, left: 80}, width = 720, height = 720;
+  var margin = {top: 80, right: 0, bottom: 10, left: 80}, width = 600, height = 600;
 
   var x = d3.scale.ordinal().rangeBands([0, width]),
       z = d3.scale.linear().domain([0.00, .01, .8]).range([.2, .5 ,1.0]).clamp(true),
@@ -10,20 +10,19 @@ function make_matrix(matrix_name){
   var svg = d3.select("body").append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
-      .style("margin-left", -margin.left + "px")
+      // .style("margin-left", -margin.left + "px")
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   d3.csv("/download/" + matrix_name, function(rows) {
-    var master = {};
-
-    var matrix = [],
+    var master = {},
+        matrix = [],
         nodes = [],
         nodes_map = {},
-        n = rows.length;
-
-
-    var columns, col_map;
+        n = rows.length,
+        columns, 
+        col_map, 
+        m;
 
 
     rows.forEach(function(row, i){
@@ -32,14 +31,14 @@ function make_matrix(matrix_name){
       columns = Object.keys(row);
       col_map = columns.reduce(function(o, v, i) {o[v] = i; return o; }, {});
       var m = columns.length;
-      nodes[i] = {"name":code, "count":0, "group":0, "index":i};
-      matrix[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });
-      var total = 1.0 * Object.keys(row).map(function(key){return +row[key];}).reduce(function(a, b) {return a + b;});
+      var total = 1.0 * columns.map(function(key){return +row[key];}).reduce(function(a, b) {return a + b;});
+      nodes[i] = {"name":code, "count": total, "group":0, "index":i};
+      matrix[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0, c:2}; });
       columns.forEach(function(key){
-        var prev_val = row[key];
         row[key] =(row[key]*1.0)/ total;
         matrix[i][col_map[key]].z = row[key];
-        nodes[i].count += prev_val;
+        if(key==code)
+          matrix[i][col_map[key]].c = 0;
       });
 
       master[code] = row;
@@ -110,21 +109,22 @@ function make_matrix(matrix_name){
           .attr("width", x.rangeBand())
           .attr("height", x.rangeBand())
           .style("fill-opacity", function(d) { return z(d.z); })
-          .style("fill", function(d) { return nodes[d.x].group == nodes[d.y].group ? c(nodes[d.x].group) : null; })
+          .style("fill", function(d) { return c(d.c)}) // nodes[d.x].group == nodes[d.y].group ? c(nodes[d.x].group) : null; })
+          // .style("fill", function(d) { return nodes[d.x].group == nodes[d.y].group ? c(nodes[d.x].group) : null; })
           .on("mouseover", mouseover)
           .on("mouseout", mouseout);
     }
 
     function mouseover(p) {
-      d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
-      d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+      svg.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
+      svg.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
     }
 
     function mouseout() {
-      d3.selectAll("text").classed("active", false);
+      svg.selectAll("text").classed("active", false);
     }
 
-    d3.select("#order").on("change", function() {
+    d3.select("#order").on("change."+matrix_name, function() {
       clearTimeout(timeout);
       order(this.value);
     });
@@ -147,10 +147,11 @@ function make_matrix(matrix_name){
     }
 
     var timeout = setTimeout(function() {
-      order("group");
-      d3.select("#order").property("selectedIndex", 2).node().focus();
+      order("count");
+      d3.select("#order").property("selectedIndex", 1).node().focus();
     }, 5000);
   });
 }
 
 make_matrix("id_matrix.csv");
+make_matrix("ld_matrix.csv");
