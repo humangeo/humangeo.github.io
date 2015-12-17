@@ -23,13 +23,14 @@ function make_matrix(matrix_name){
         n = rows.length;
 
 
-    var columns;
+    var columns, col_map;
 
 
     rows.forEach(function(row, i){
       var code = row.code;
       delete row.code;
       columns = Object.keys(row);
+      col_map = columns.reduce(function(o, v, i) {o[v] = i; return o; }, {});
       var m = columns.length;
       nodes[i] = {"name":code, "count":0, "group":0, "index":i};
       matrix[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0}; });
