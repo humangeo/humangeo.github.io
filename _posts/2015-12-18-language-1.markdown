@@ -1,6 +1,6 @@
 ---
 title: Voulez vous Language Detection? Part 1
-updated: 2015-12-18 12:56
+updated: 2015-12-14
 ---
 
 ## Voulez vous Language Detection? Part 1
@@ -25,6 +25,10 @@ This filtered text is passed into the two Language Detectors to perform detectio
 #### A quick note on probabilities
 Many people request clarifications on what the "probablities" mean. Each language has an associated probability with it. For example you could get the following as a list of languages for a detection: (en: .6, es: .3, fr: .1).
 These numbers mean English (en) is twice as likely than Spanish (es) to being the probable language as well as six times more likely than French (fr). Similarly, Spanish is three times as likely than French. The numbers are derived from true probabilities which end up being very small and are scaled so that they maintain their relative proportions and they sum up to 1.
+
+
+
+
 
 
 <aside style="margin-top:80px;">
