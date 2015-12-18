@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Voulez vous Language Detection? Part 1
+title: Yo Quero Language Detection - Part 1
 date:   2015-12-16 12:17:58 -0500
 categories: jekyll update
 author: Mahmoud Lababidi
@@ -18,6 +18,7 @@ In the past we have used the following libraries in various projects:
 - [LangID (for Java)](https://github.com/carrotsearch/langid-java)
 
 Recently, we needed to perform LD on text in Java, so we focused our efforts on two Java libraries, LangID and LanguageDetection. We ran tests on these two libraries to determine the accuracy and perfomance of the libraries. Below are the highlights of the process and a discussion of the results.
+
 
 ### Process
 To perform Testing on this classification problem, a prelabeled data set of text needs to be used for testing. For this, we use Twitter data that we gathered from the Streaming API.
@@ -43,13 +44,22 @@ They are scaled so that they maintain their relative proportions and they sum up
 #### Comparison Code
 The following is the high-level portion of code used the do the main detection and store the results.
 This is where the actual detection happens. 
-These blocks were derived from 
+These blocks were derived from code found in tutorials and examples of the respective libraries.
+
+The first portion just handles retrieving and stripping text from a Twitter message.
+As stated, hashtags, mentions and urls are removed. 
+The `lang` variable is the "true" language according to Twitter.
+The `detLang` is a variable for the detected Language from each library.
 
 {% highlight java %}
 String text = massageMessage(message), 
         lang = getLanguage(message),
         detLang;
 {% endhighlight %}
+
+The following is the code that retrieves the top language from LanguageDetection's detection.
+If no language met it's default threshold, a code of `und` was assigned.
+The confusion matrix was updated with the true and detected languages.
 
 {% highlight java %}
 List<DetectedLanguage> languageOpt = 
@@ -59,6 +69,9 @@ detLang = languageOpt.size() == 0 ? "und" : languageOpt.get(0).getLocale().getLa
 
 updateMatrix(detectorMatrix, lang, detLang);
 {% endhighlight %}	
+
+The same process is done using LangID as done in Language Detection.
+One difference, a bit of wrangling/sorting is needed to get the top detected language.
 
 {% highlight java %}
 langID.classify(text, true);
@@ -76,79 +89,99 @@ updateMatrix(idMatrix, lang, detLang);
 
 ### Results - Precision, Recall, F1 Scores - Confusion Matrices
 
+Below we present the F1, Recall, Precision scores and Total messages of each language. 
+The most frequent language is English, with 1.4 million messages. 
+Spanish, Portuguese, Japanese, Arabic, Indonesian, Turkish, Russian 
+rounding out the top languages with at least 100k total messages.
 
-#### Language Detection
+There are a few differences in the results statistics between the two libraries.
+LanguageDetection seems to opt with `und` more often than LandID.
+Having more undetermined identifications lowers the recall score of a category.
+This is seen in several recall scores of LanguageDetection, in particular for English, with a recall score under .5.
+In turn, by potentially removing ambiguities a classifier may improve its precision. 
+Again, LanguageDetection has some precision scores above .9, as seen in English and Spanish.
 
 
-| lang | Lang | prec | rec | F1 |
-| --- | --- | --- | --- | --- |
-| am | Amharic | 0 | 0 | 0 |
-| ar | Arabic | 0.632 | 0.994 | 0.772703567 |
-| bg | Bulgarian | 0.464 | 0.06 | 0.106259542 |
-| bn | Bengali | 0.718 | 0.99 | 0.83234192 |
-| ckb | null | 0 | 0 | 0 |
-| cs | Czech | 0.189 | 0.14 | 0.160851064 |
-| cy | Welsh | 0.427 | 0.025 | 0.047234513 |
-| da | Danish | 0.231 | 0.06 | 0.095257732 |
-| de | German | 0.422 | 0.147 | 0.218045694 |
-| el | "Greek Modern (1453-)" | 0.545 | 0.914 | 0.68283756 |
-| en | English | 0.467 | 0.942 | 0.624434351 |
-| es | Spanish; Castilian | 0.37 | 0.957 | 0.533669932 |
-| et | Estonian | 0.122 | 0.064 | 0.083956989 |
-| eu | Basque | 0.353 | 0.091 | 0.144698198 |
-| fa | Persian | 0.483 | 0.122 | 0.194796694 |
-| fi | Finnish | 0.27 | 0.057 | 0.09412844 |
-| fr | French | 0.456 | 0.679 | 0.545592952 |
-| gu | Gujarati | 0.703 | 0.922 | 0.797742769 |
-| he | Hebrew | 0.725 | 0.986 | 0.83559322 |
-| hi | Hindi | 0.139 | 0.908 | 0.241092646 |
-| ht | Haitian; Haitian Creole | 0.16 | 0.022 | 0.038681319 |
-| hu | Hungarian | 0.305 | 0.09 | 0.138987342 |
-| hy | Armenian | 0 | 0 | 0 |
-| id | Indonesian | 0.258 | 0.7 | 0.377035491 |
-| is | Icelandic | 0.272 | 0.138 | 0.183102439 |
-| it | Italian | 0.458 | 0.326 | 0.380887755 |
-| ja | Japanese | 0.89 | 0.999 | 0.941355214 |
-| ka | Georgian | 0 | 0 | 0 |
-| km | Central Khmer | 0.96 | 1 | 0.979591837 |
-| kn | Kannada | 0.273 | 0.6 | 0.375257732 |
-| ko | Korean | 0.619 | 0.437 | 0.512316288 |
-| lo | Lao | 0 | 0 | 0 |
-| lt | Lithuanian | 0.296 | 0.081 | 0.127193634 |
-| lv | Latvian | 0.323 | 0.282 | 0.301110744 |
-| ml | Malayalam | 0.441 | 1 | 0.612074948 |
-| mr | Marathi | 0.338 | 0.349 | 0.343411936 |
-| my | Burmese | 0 | 0 | 0 |
-| ne | Nepali | 0.399 | 0.848 | 0.542665597 |
-| nl | Dutch; Flemish | 0.352 | 0.223 | 0.273029565 |
-| no | Norwegian | 0.244 | 0.041 | 0.070203509 |
-| or | Oriya | 0 | 0 | 0 |
-| pa | Panjabi; Punjabi | 0.2 | 1 | 0.333333333 |
-| pl | Polish | 0.424 | 0.445 | 0.43424626 |
-| ps | Pushto; Pashto | 0 | 0 | 0 |
-| pt | Portuguese | 0.494 | 0.869 | 0.629913426 |
-| ro | Romanian; Moldavian; Moldovan | 0.166 | 0.035 | 0.057810945 |
-| ru | Russian | 0.483 | 0.962 | 0.643108651 |
-| sd | Sindhi | 0 | 0 | 0 |
-| si | Sinhala; Sinhalese | 0 | 0 | 0 |
-| sl | Slovenian | 0.388 | 0.03 | 0.05569378 |
-| sr | Serbian | 0.454 | 0.046 | 0.083536 |
-| sv | Swedish | 0.333 | 0.188 | 0.240322457 |
-| ta | Tamil | 0.569 | 0.989 | 0.72238896 |
-| te | Telugu | 0.565 | 0.929 | 0.702657296 |
-| th | Thai | 0.82 | 0.976 | 0.891224944 |
-| tl | Tagalog | 0.518 | 0.574 | 0.544564103 |
-| tr | Turkish | 0.491 | 0.937 | 0.644351541 |
-| uk | Ukrainian | 0.251 | 0.481 | 0.32986612 |
-| und | Undetermined | 0.818 | 0.147 | 0.249214508 |
-| ur | Urdu | 0.38 | 0.371 | 0.375446072 |
-| vi | Vietnamese | 0.078 | 0.046 | 0.057870968 |
-| zh | Chinese | 0.387 | 0.54 | 0.450873786 |
+LangID, on the other hand, was willing to make mistakes in the precision, but typically had reasonable recall.
 
+Overall, which library someone would prefer "out of the box" depends on which metric is more important.
+Another way to see this: the classifier can either be very certain about it's decision, while balking any ambiguous text or a classifier is willing to make a guess, though it may be wrong but it does a better job at capturing certain languages.
+
+
+#### LanguageDetection
+
+
+| lang | Lang | recall | precision | F1 | Total |
+| --- | --- | --- | --- | --- | --- |
+| am | Amharic | 0 | 0 | 0 | 6
+| ar | Arabic | 0.632 | 0.994 | 0.772703567 | 128462
+| bg | Bulgarian | 0.464 | 0.06 | 0.106259542 | 1010
+| bn | Bengali | 0.718 | 0.99 | 0.83234192 | 1274
+| ckb | null | 0 | 0 | 0 | 22
+| cs | Czech | 0.189 | 0.14 | 0.160851064 | 2386
+| cy | Welsh | 0.427 | 0.025 | 0.047234513 | 1808
+| da | Danish | 0.231 | 0.06 | 0.095257732 | 3577
+| de | German | 0.422 | 0.147 | 0.218045694 | 16680
+| el | "Greek Modern (1453-)" | 0.545 | 0.914 | 0.68283756 | 5124
+| en | English | 0.467 | 0.942 | 0.624434351 | 1402991
+| es | Spanish; Castilian | 0.37 | 0.957 | 0.533669932 | 482062
+| et | Estonian | 0.122 | 0.064 | 0.083956989 | 9448
+| eu | Basque | 0.353 | 0.091 | 0.144698198 | 2668
+| fa | Persian | 0.483 | 0.122 | 0.194796694 | 2288
+| fi | Finnish | 0.27 | 0.057 | 0.09412844 | 3148
+| fr | French | 0.456 | 0.679 | 0.545592952 | 82573
+| gu | Gujarati | 0.703 | 0.922 | 0.797742769 | 101
+| he | Hebrew | 0.725 | 0.986 | 0.83559322 | 1539
+| hi | Hindi | 0.139 | 0.908 | 0.241092646 | 7076
+| ht | Haitian; Haitian Creole | 0.16 | 0.022 | 0.038681319 | 6180
+| hu | Hungarian | 0.305 | 0.09 | 0.138987342 | 1624
+| hy | Armenian | 0 | 0 | 0 | 22
+| id | Indonesian | 0.258 | 0.7 | 0.377035491 | 126543
+| is | Icelandic | 0.272 | 0.138 | 0.183102439 | 1259
+| it | Italian | 0.458 | 0.326 | 0.380887755 | 31264
+| ja | Japanese | 0.89 | 0.999 | 0.941355214 | 213352
+| ka | Georgian | 0 | 0 | 0 | 14
+| km | Central Khmer | 0.96 | 1 | 0.979591837 | 25
+| kn | Kannada | 0.273 | 0.6 | 0.375257732 | 55
+| ko | Korean | 0.619 | 0.437 | 0.512316288 | 6776
+| lo | Lao | 0 | 0 | 0 | 5
+| lt | Lithuanian | 0.296 | 0.081 | 0.127193634 | 1477
+| lv | Latvian | 0.323 | 0.282 | 0.301110744 | 3248
+| ml | Malayalam | 0.441 | 1 | 0.612074948 | 111
+| mr | Marathi | 0.338 | 0.349 | 0.343411936 | 198
+| my | Burmese | 0 | 0 | 0 | 7
+| ne | Nepali | 0.399 | 0.848 | 0.542665597 | 1118
+| nl | Dutch; Flemish | 0.352 | 0.223 | 0.273029565 | 16497
+| no | Norwegian | 0.244 | 0.041 | 0.070203509 | 2838
+| or | Oriya | 0 | 0 | 0 | 12
+| pa | Panjabi; Punjabi | 0.2 | 1 | 0.333333333 | 25
+| pl | Polish | 0.424 | 0.445 | 0.43424626 | 11232
+| ps | Pushto; Pashto | 0 | 0 | 0 | 61
+| pt | Portuguese | 0.494 | 0.869 | 0.629913426 | 327847
+| ro | Romanian; Moldavian; Moldovan | 0.166 | 0.035 | 0.057810945 | 2640
+| ru | Russian | 0.483 | 0.962 | 0.643108651 | 104784
+| sd | Sindhi | 0 | 0 | 0 | 6
+| si | Sinhala; Sinhalese | 0 | 0 | 0 | 108
+| sl | Slovenian | 0.388 | 0.03 | 0.05569378 | 1305
+| sr | Serbian | 0.454 | 0.046 | 0.083536 | 679
+| sv | Swedish | 0.333 | 0.188 | 0.240322457 | 7545
+| ta | Tamil | 0.569 | 0.989 | 0.72238896 | 1405
+| te | Telugu | 0.565 | 0.929 | 0.702657296 | 23
+| th | Thai | 0.82 | 0.976 | 0.891224944 | 65742
+| tl | Tagalog | 0.518 | 0.574 | 0.544564103 | 72644
+| tr | Turkish | 0.491 | 0.937 | 0.644351541 | 131587
+| uk | Ukrainian | 0.251 | 0.481 | 0.32986612 | 10654
+| und | Undetermined | 0.818 | 0.147 | 0.249214508 | 269358
+| ur | Urdu | 0.38 | 0.371 | 0.375446072 | 2323
+| vi | Vietnamese | 0.078 | 0.046 | 0.057870968 | 2767
+| zh | Chinese | 0.387 | 0.54 | 0.450873786 | 3964 
+
+<br/>
 
 #### LangID
 
-| lang | Lang | prec | rec | F1 |
+| lang | Lang | recall | prec | F1 | Total |
+| --- | --- | --- | --- | --- | --- |
 | am | Amharic | 1 | 0.001 | 0.001998002 | 6 |
 | ar | Arabic | 0.837 | 0.952 | 0.890803801 | 127625 |
 | bg | Bulgarian | 0.535 | 0.067 | 0.119086379 | 949 |
@@ -160,7 +193,7 @@ updateMatrix(idMatrix, lang, detLang);
 | de | German | 0.783 | 0.303 | 0.436922652 | 17057 |
 | el | "Greek Modern(1453-)" | 1 | 0.782 | 0.877665544 | 5119 |
 | en | English | 0.899 | 0.792 | 0.842114725 | 1472971 |
-| es | Spanish;Castilian | 0.853 | 0.907 | 0.879171591 | 548801 |
+| es | Spanish; Castilian | 0.853 | 0.907 | 0.879171591 | 548801 |
 | et | Estonian | 0.066 | 0.065 | 0.065496183 | 10684 |
 | eu | Basque | 0.132 | 0.066 | 0.088 | 3364 |
 | fa | Persian | 0.892 | 0.14 | 0.242015504 | 2259 |
@@ -169,7 +202,7 @@ updateMatrix(idMatrix, lang, detLang);
 | gu | Gujarati | 1 | 0.352 | 0.520710059 | 101 |
 | he | Hebrew | 0.992 | 0.145 | 0.253016711 | 1609 |
 | hi | Hindi | 0.518 | 0.695 | 0.59358615 | 7340 |
-| ht | Haitian;Haitian-Creole | 0.015 | 0.127 | 0.026830986 | 9366 |
+| ht | Haitian; Haitian-Creole | 0.015 | 0.127 | 0.026830986 | 9366 |
 | hu | Hungarian | 0.413 | 0.118 | 0.183555556 | 1882 |
 | hy | Armenian | 0.826 | 0.024 | 0.046644706 | 23 |
 | id | Indonesian | 0.49 | 0.777 | 0.600994475 | 125555 |
@@ -194,7 +227,7 @@ updateMatrix(idMatrix, lang, detLang);
 | pl | Polish | 0.758 | 0.51 | 0.609747634 | 12075 |
 | ps | Pushto;Pashto | 0.59 | 0.02 | 0.038688525 | 61 |
 | pt | Portuguese | 0.774 | 0.921 | 0.841125664 | 354859 |
-| ro | Romanian;Moldavian;Moldovan | 0.124 | 0.048 | 0.069209302 | 2622 |
+| ro | Romanian; Moldavian; Moldovan | 0.124 | 0.048 | 0.069209302 | 2622 |
 | ru | Russian | 0.834 | 0.945 | 0.886037099 | 101405 |
 | sd | Sindhi | 0 | 0 | 0 | 5 |
 | si | Sinhala;Sinhalese | 1 | 0.076 | 0.141263941 | 122 |
@@ -212,7 +245,35 @@ updateMatrix(idMatrix, lang, detLang);
 | vi | Vietnamese | 0.099 | 0.073 | 0.084034884 | 3096 |
 | zh | Chinese | 0.986 | 0.074 | 0.137667925 | 4191 | 
 
-Below are the visual Confusion Matrices that represent 
+
+<br/>
+
+#### Confusion Matrices
+
+Below are the visual Confusion Matrices that represent the categorization totals of each language. 
+The rows are labeled with the "truth" language, while the columns are labeled with detected language.
+Each cell in the matrix is color and transparency coded to represent the relative weight to the other cells in the row.
+The values of the cells are not linear (.1 value -> .9 transparency) but log scaled to bring out low scores to visual any potential clusters.
+
+The diagonals are labeled as blue because in this view with logarithmic scales, it would not be appropriate to compare and contrast the values of correct detection to the incorrect detections.
+That type of analysis is meant to be done using the recall/precision as shown above.
+The matrix is meant to determine what _other_ languages are being detected instead of the true language.
+
+The confusion matrices are available for download as csv files: 
+[LangID](/download/id_matrix.csv), [LangDetection](/download/ld_matrix.csv) 
+
+The frequency ranking in the dropdown sorts according to the number of "true" texts for each row.
+As stated before the rows get sorted to English, Spanish, Portuguese, Japanese, Arabic, Indonesian, Turkish, Russian. 
+Additionally there is the `und` for "true" language that represents messages that haven't been identified by Twitter.
+
+Some interesting false detections points:
+
+ - When Arabic messages get detected incorrectly, they are usually tagged: Pashto, Urdu, Farsi 
+ - For Japanese messages, Chinese is the culprit
+ - For English: French, German, Spanish, Italian, and Chinese(??)
+ - For Russian: Bulgarian, Serbian, Ukranian
+ - For Korean: Japanese, Thai
+ - 
 <div id="matrices">
 	<aside style="margin-top:80px;">
 		<p>Order: 
@@ -230,5 +291,22 @@ Below are the visual Confusion Matrices that represent
 		<h4>LangID Confusion Matrix</h4>
 	</div>
 </div>
+
+### Concluding Remarks
+
+This study was an overview of a few Language Detection libraries, in particular in Java.
+Though, there is no clear indication of a "better" library, our preference is to use LangID "out of the box" 
+because it has a reasonable recall score for many languages.
+
+We will delve into other issues such as the true accuracy of Twitter's language detection in the future. 
+This will help us create a proper Gold-Standard test (and maybe training) set for future studies. 
+This study is meant to reiterate the fact that no machine learning classifier is perfect. 
+It is also a helpful push to anyone interested in this problem and looking to contribute, 
+since the source code to these libraries are on github.com and available for modification. 
+
+### Additional Notes:
+
+Twitter is still tagging Messages as `in` for Indonesian, and `iw` for Hebrew.
+This has been reported to [Twitter](https://twittercommunity.com/t/hebrew-and-indonesian-getting-incorrect-lang-codes/13044).
 
 <script src="/download/make_matrix.js"></script>
