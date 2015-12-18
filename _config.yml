@@ -6,10 +6,10 @@
 # 'jekyll serve'. If you change this file, please restart the server process.
 
 # Site settings
-title: HumanGeo Data Blog
+title: HumanGeo Data Science Blog
 email: mla@thehumangeo.com
 description: > # this means to ignore newlines until "baseurl:"
-  The HumanGeo Data blog is focused on highlighting interesting Data Science
+  The HumanGeo Data Science blog is focused on highlighting interesting Data Science
   and Engineering problems. We appreciate feedback and would like to hear from
   you. If these problems interest you and you are looking for a job, let us know
   because we are hiring.
@@ -20,3 +20,6 @@ github_username:  humangeo
 
 # Build settings
 markdown: kramdown
+kramdown:
+  extensions:
+    - tables

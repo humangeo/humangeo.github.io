@@ -3,43 +3,232 @@ layout: post
 title: Voulez vous Language Detection? Part 1
 date:   2015-12-16 12:17:58 -0500
 categories: jekyll update
+author: Mahmoud Lababidi
 ---
 
-## Voulez vous Language Detection? Part 1
+One of the persitent issues we deal with at HumanGeo is determining the language of a block of text. 
+There are multiple Language Detection (LD) libraries available claiming high accuracy, 
+so building our own wasn't necessary considering these are libraries built by experts in Computational Linguistics. 
+Out of the many choices we were interested in determining the accuracy and performance of the different libraries. 
+In the past we have used the following libraries in various projects:
 
-#### Mahmoud Lababidi
-
-One of the persitent issues we deal with at HumanGeo is determining the language of a block of text. There are multiple Language Detection (LD) libraries available claiming high accuracy, so building our own wasn't necessary considering these are libraries built by experts in Computational Linguistics. Out of the many choices we were interested in determining the accuracy and performance of the different libraries. In the past we have used the following libraries in various projects:
-
--CLD
--LangID
--LanguageDetection
--LangID (for Java)
+- [CLD](https://github.com/mzsanford/cld)
+- [LangID](https://github.com/saffsd/langid.py)
+- [LanguageDetection](https://github.com/optimaize/language-detector)
+- [LangID (for Java)](https://github.com/carrotsearch/langid-java)
 
 Recently, we needed to perform LD on text in Java, so we focused our efforts on two Java libraries, LangID and LanguageDetection. We ran tests on these two libraries to determine the accuracy and perfomance of the libraries. Below are the highlights of the process and a discussion of the results.
 
 ### Process
 To perform Testing on this classification problem, a prelabeled data set of text needs to be used for testing. For this, we use Twitter data that we gathered from the Streaming API.
-Messages from Twitter contain a field for language (`lang`) that has a two-letter ISO code representing the language that Twitter has determined in their process. Firstly, we understand this classification by Twitter is not perfect, but in terms of large quantities of data Twitter is an excellent source.
+Messages from Twitter contain a field for language (`lang`) that has a two-letter ISO code representing the language that Twitter has determined in their process. 
+We understand this language classification by Twitter is not perfect, 
+we will overlook this issue momentarily because the large quantities of categorized data available outweighs these issues.
+We will not ignore this issue completely and even study the data Twitter provides at a later time.
 Once we collected adequate data (millions), we take the text of every tweet and remove #hashtags, @mentions, and URLs. 
-This filtered text is passed into the two Language Detectors to perform detection. The two detectors each return a list of languages that are ranked from most likely to least likely. The different libraries have a "threshold" value that can filter the returned languages that have a score/probability higher than the threshold value for convenience. 
+This filtered text is passed into the two Language Detectors to perform detection. 
+The two detectors each return a list of languages that are ranked from most likely to least likely. 
+The different libraries have a "threshold" value that can filter the returned languages that have a score/probability higher than the threshold value for convenience. 
 
 #### A quick note on probabilities
-Many people request clarifications on what the "probablities" mean. Each language has an associated probability with it. For example you could get the following as a list of languages for a detection: (en: .6, es: .3, fr: .1).
-These numbers mean English (en) is twice as likely than Spanish (es) to being the probable language as well as six times more likely than French (fr). Similarly, Spanish is three times as likely than French. The numbers are derived from true probabilities which end up being very small and are scaled so that they maintain their relative proportions and they sum up to 1.
+Many people request clarifications on what the "probablities" mean. 
+Each language has an associated probability with it. 
+For example, you could get the following as a list of languages for a detection: (en: .6, es: .3, fr: .1).
+These numbers mean English (en) is twice as likely than Spanish (es) to being the probable language
+English is also six times more likely than French (fr). 
+Similarly, Spanish is three times as likely than French. 
+The numbers are derived from true probabilities which end up being very small. 
+They are scaled so that they maintain their relative proportions and they sum up to 1.
+
+#### Comparison Code
+The following is the high-level portion of code used the do the main detection and store the results.
+This is where the actual detection happens. 
+These blocks were derived from 
+
+{% highlight java %}
+String text = massageMessage(message), 
+        lang = getLanguage(message),
+        detLang;
+{% endhighlight %}
+
+{% highlight java %}
+List<DetectedLanguage> languageOpt = 
+        languageDetector.getProbabilities(textObjectFactory.forText(text));
+
+detLang = languageOpt.size() == 0 ? "und" : languageOpt.get(0).getLocale().getLanguage();
+
+updateMatrix(detectorMatrix, lang, detLang);
+{% endhighlight %}	
+
+{% highlight java %}
+langID.classify(text, true);
+
+List<DetectedLanguage> results = new ArrayList<>(langID.rank(true));
+Collections.sort(results, (o1, o2) -> Float.compare(o2.confidence, o1.confidence));
+
+List<String> detectedLangs = results.stream()
+        .map(DetectedLanguage::getLangCode)
+        .collect(Collectors.toList());
+
+detLang = results.size() == 0 ? "und" : detectedLangs.get(0);
+updateMatrix(idMatrix, lang, detLang);
+{% endhighlight %}	
+
+### Results - Precision, Recall, F1 Scores - Confusion Matrices
 
 
+#### Language Detection
 
 
+| lang | Lang | prec | rec | F1 |
+| --- | --- | --- | --- | --- |
+| am | Amharic | 0 | 0 | 0 |
+| ar | Arabic | 0.632 | 0.994 | 0.772703567 |
+| bg | Bulgarian | 0.464 | 0.06 | 0.106259542 |
+| bn | Bengali | 0.718 | 0.99 | 0.83234192 |
+| ckb | null | 0 | 0 | 0 |
+| cs | Czech | 0.189 | 0.14 | 0.160851064 |
+| cy | Welsh | 0.427 | 0.025 | 0.047234513 |
+| da | Danish | 0.231 | 0.06 | 0.095257732 |
+| de | German | 0.422 | 0.147 | 0.218045694 |
+| el | "Greek Modern (1453-)" | 0.545 | 0.914 | 0.68283756 |
+| en | English | 0.467 | 0.942 | 0.624434351 |
+| es | Spanish; Castilian | 0.37 | 0.957 | 0.533669932 |
+| et | Estonian | 0.122 | 0.064 | 0.083956989 |
+| eu | Basque | 0.353 | 0.091 | 0.144698198 |
+| fa | Persian | 0.483 | 0.122 | 0.194796694 |
+| fi | Finnish | 0.27 | 0.057 | 0.09412844 |
+| fr | French | 0.456 | 0.679 | 0.545592952 |
+| gu | Gujarati | 0.703 | 0.922 | 0.797742769 |
+| he | Hebrew | 0.725 | 0.986 | 0.83559322 |
+| hi | Hindi | 0.139 | 0.908 | 0.241092646 |
+| ht | Haitian; Haitian Creole | 0.16 | 0.022 | 0.038681319 |
+| hu | Hungarian | 0.305 | 0.09 | 0.138987342 |
+| hy | Armenian | 0 | 0 | 0 |
+| id | Indonesian | 0.258 | 0.7 | 0.377035491 |
+| is | Icelandic | 0.272 | 0.138 | 0.183102439 |
+| it | Italian | 0.458 | 0.326 | 0.380887755 |
+| ja | Japanese | 0.89 | 0.999 | 0.941355214 |
+| ka | Georgian | 0 | 0 | 0 |
+| km | Central Khmer | 0.96 | 1 | 0.979591837 |
+| kn | Kannada | 0.273 | 0.6 | 0.375257732 |
+| ko | Korean | 0.619 | 0.437 | 0.512316288 |
+| lo | Lao | 0 | 0 | 0 |
+| lt | Lithuanian | 0.296 | 0.081 | 0.127193634 |
+| lv | Latvian | 0.323 | 0.282 | 0.301110744 |
+| ml | Malayalam | 0.441 | 1 | 0.612074948 |
+| mr | Marathi | 0.338 | 0.349 | 0.343411936 |
+| my | Burmese | 0 | 0 | 0 |
+| ne | Nepali | 0.399 | 0.848 | 0.542665597 |
+| nl | Dutch; Flemish | 0.352 | 0.223 | 0.273029565 |
+| no | Norwegian | 0.244 | 0.041 | 0.070203509 |
+| or | Oriya | 0 | 0 | 0 |
+| pa | Panjabi; Punjabi | 0.2 | 1 | 0.333333333 |
+| pl | Polish | 0.424 | 0.445 | 0.43424626 |
+| ps | Pushto; Pashto | 0 | 0 | 0 |
+| pt | Portuguese | 0.494 | 0.869 | 0.629913426 |
+| ro | Romanian; Moldavian; Moldovan | 0.166 | 0.035 | 0.057810945 |
+| ru | Russian | 0.483 | 0.962 | 0.643108651 |
+| sd | Sindhi | 0 | 0 | 0 |
+| si | Sinhala; Sinhalese | 0 | 0 | 0 |
+| sl | Slovenian | 0.388 | 0.03 | 0.05569378 |
+| sr | Serbian | 0.454 | 0.046 | 0.083536 |
+| sv | Swedish | 0.333 | 0.188 | 0.240322457 |
+| ta | Tamil | 0.569 | 0.989 | 0.72238896 |
+| te | Telugu | 0.565 | 0.929 | 0.702657296 |
+| th | Thai | 0.82 | 0.976 | 0.891224944 |
+| tl | Tagalog | 0.518 | 0.574 | 0.544564103 |
+| tr | Turkish | 0.491 | 0.937 | 0.644351541 |
+| uk | Ukrainian | 0.251 | 0.481 | 0.32986612 |
+| und | Undetermined | 0.818 | 0.147 | 0.249214508 |
+| ur | Urdu | 0.38 | 0.371 | 0.375446072 |
+| vi | Vietnamese | 0.078 | 0.046 | 0.057870968 |
+| zh | Chinese | 0.387 | 0.54 | 0.450873786 |
 
 
-<aside style="margin-top:80px;">
-<p>Order: <select id="order">
-  <option value="name">by Name</option>
-  <option value="count">by Frequency</option>
-  <!-- <option value="group">by Cluster</option> -->
-</select>
+#### LangID
 
-</aside>
+| lang | Lang | prec | rec | F1 |
+| am | Amharic | 1 | 0.001 | 0.001998002 | 6 |
+| ar | Arabic | 0.837 | 0.952 | 0.890803801 | 127625 |
+| bg | Bulgarian | 0.535 | 0.067 | 0.119086379 | 949 |
+| bn | Bengali | 0.998 | 0.231 | 0.375163548 | 1262 |
+| ckb | null | 0 | 0 | 0 | 20 |
+| cs | Czech | 0.391 | 0.156 | 0.22302011 | 2532 |
+| cy | Welsh | 0.098 | 0.063 | 0.076695652 | 2202 |
+| da | Danish | 0.31 | 0.098 | 0.148921569 | 3717 |
+| de | German | 0.783 | 0.303 | 0.436922652 | 17057 |
+| el | "Greek Modern(1453-)" | 1 | 0.782 | 0.877665544 | 5119 |
+| en | English | 0.899 | 0.792 | 0.842114725 | 1472971 |
+| es | Spanish;Castilian | 0.853 | 0.907 | 0.879171591 | 548801 |
+| et | Estonian | 0.066 | 0.065 | 0.065496183 | 10684 |
+| eu | Basque | 0.132 | 0.066 | 0.088 | 3364 |
+| fa | Persian | 0.892 | 0.14 | 0.242015504 | 2259 |
+| fi | Finnish | 0.599 | 0.119 | 0.198554318 | 3250 |
+| fr | French | 0.832 | 0.696 | 0.757947644 | 86063 |
+| gu | Gujarati | 1 | 0.352 | 0.520710059 | 101 |
+| he | Hebrew | 0.992 | 0.145 | 0.253016711 | 1609 |
+| hi | Hindi | 0.518 | 0.695 | 0.59358615 | 7340 |
+| ht | Haitian;Haitian-Creole | 0.015 | 0.127 | 0.026830986 | 9366 |
+| hu | Hungarian | 0.413 | 0.118 | 0.183555556 | 1882 |
+| hy | Armenian | 0.826 | 0.024 | 0.046644706 | 23 |
+| id | Indonesian | 0.49 | 0.777 | 0.600994475 | 125555 |
+| is | Icelandic | 0.499 | 0.294 | 0.370002522 | 1461 |
+| it | Italian | 0.741 | 0.394 | 0.514456388 | 33668 |
+| ja | Japanese | 0.942 | 0.915 | 0.928303716 | 217173 |
+| ka | Georgian | 1 | 0.004 | 0.007968127 | 14 |
+| km | Central-Khmer | 0.96 | 0.002 | 0.003991684 | 25 |
+| kn | Kannada | 1 | 0.188 | 0.316498316 | 55 |
+| ko | Korean | 0.964 | 0.598 | 0.738120359 | 6959 |
+| lo | Lao | 1 | 0.005 | 0.009950249 | 5 |
+| lt | Lithuanian | 0.187 | 0.042 | 0.068593886 | 1848 |
+| lv | Latvian | 0.505 | 0.385 | 0.436910112 | 3653 |
+| ml | Malayalam | 1 | 0.227 | 0.37000815 | 111 |
+| mr | Marathi | 0.813 | 0.144 | 0.244664577 | 198 |
+| my | Burmese | 0 | 0 | 0 | 7 |
+| ne | Nepali | 0.743 | 0.465 | 0.572011589 | 1118 |
+| nl | Dutch;Flemish | 0.758 | 0.49 | 0.595224359 | 18726 |
+| no | Norwegian | 0.34 | 0.138 | 0.196317992 | 2666 |
+| or | Oriya | 1 | 0.05 | 0.095238095 | 12 |
+| pa | Panjabi;Punjabi | 1 | 0.174 | 0.296422487 | 25 |
+| pl | Polish | 0.758 | 0.51 | 0.609747634 | 12075 |
+| ps | Pushto;Pashto | 0.59 | 0.02 | 0.038688525 | 61 |
+| pt | Portuguese | 0.774 | 0.921 | 0.841125664 | 354859 |
+| ro | Romanian;Moldavian;Moldovan | 0.124 | 0.048 | 0.069209302 | 2622 |
+| ru | Russian | 0.834 | 0.945 | 0.886037099 | 101405 |
+| sd | Sindhi | 0 | 0 | 0 | 5 |
+| si | Sinhala;Sinhalese | 1 | 0.076 | 0.141263941 | 122 |
+| sl | Slovenian | 0.475 | 0.074 | 0.128051002 | 1247 |
+| sr | Serbian | 0.766 | 0.051 | 0.095632803 | 552 |
+| sv | Swedish | 0.703 | 0.355 | 0.471767486 | 7750 |
+| ta | Tamil | 0.996 | 0.647 | 0.784433354 | 1405 |
+| te | Telugu | 1 | 0.113 | 0.203054807 | 23 |
+| th | Thai | 0.999 | 0.827 | 0.904899233 | 65745 |
+| tl | Tagalog | 0.398 | 0.731 | 0.515390611 | 82385 |
+| tr | Turkish | 0.883 | 0.971 | 0.924911543 | 124692 |
+| uk | Ukrainian | 0.541 | 0.486 | 0.512027264 | 10490 |
+| und | null | 0 | 0 | 0 | 292757 |
+| ur | Urdu | 0.92 | 0.174 | 0.292650823 | 2325 |
+| vi | Vietnamese | 0.099 | 0.073 | 0.084034884 | 3096 |
+| zh | Chinese | 0.986 | 0.074 | 0.137667925 | 4191 | 
+
+Below are the visual Confusion Matrices that represent 
+<div id="matrices">
+	<aside style="margin-top:80px;">
+		<p>Order: 
+			<select id="order">
+			  <option value="name">by Name</option>
+			  <option value="count">by Frequency</option>
+			  <!-- <option value="group">by Cluster</option> -->
+			</select>
+		</p>
+	</aside>
+	<div id="ld_matrix">
+		<h4>LanguageDetection Confusion Matrix</h4>
+	</div>
+		<div id="id_matrix">
+		<h4>LangID Confusion Matrix</h4>
+	</div>
+</div>
 
 <script src="/download/make_matrix.js"></script>

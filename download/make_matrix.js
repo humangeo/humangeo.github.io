@@ -1,20 +1,20 @@
 
 function make_matrix(matrix_name){
 
-  var margin = {top: 80, right: 0, bottom: 10, left: 80}, width = 600, height = 600;
+  var margin = {top: 35, right: 0, bottom: 10, left: 35}, width = 700, height = 700;
 
   var x = d3.scale.ordinal().rangeBands([0, width]),
       z = d3.scale.linear().domain([0.00, .01, .8]).range([.2, .5 ,1.0]).clamp(true),
       c = d3.scale.category10().domain(d3.range(10));
 
-  var svg = d3.select("body").append("svg")
+  var svg = d3.select("div#"+matrix_name).append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       // .style("margin-left", -margin.left + "px")
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  d3.csv("/download/" + matrix_name, function(rows) {
+  d3.csv("/download/" + matrix_name + ".csv", function(rows) {
     var master = {},
         matrix = [],
         nodes = [],
@@ -24,7 +24,7 @@ function make_matrix(matrix_name){
         col_map, 
         m;
 
-
+        console.log(matrix_name);
     rows.forEach(function(row, i){
       var code = row.code;
       delete row.code;
@@ -32,6 +32,7 @@ function make_matrix(matrix_name){
       col_map = columns.reduce(function(o, v, i) {o[v] = i; return o; }, {});
       var m = columns.length;
       var total = 1.0 * columns.map(function(key){return +row[key];}).reduce(function(a, b) {return a + b;});
+      console.log(total);
       nodes[i] = {"name":code, "count": total, "group":0, "index":i};
       matrix[i] = d3.range(m).map(function(j) { return {x: j, y: i, z: 0, c:2}; });
       columns.forEach(function(key){
@@ -82,6 +83,7 @@ function make_matrix(matrix_name){
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
         .attr("text-anchor", "end")
+        .attr("class", "matrix")
         .text(function(d, i) { return nodes[i].name; });
 
     var column = svg.selectAll(".column")
@@ -98,6 +100,7 @@ function make_matrix(matrix_name){
         .attr("y", x.rangeBand() / 2)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
+        .attr("class", "matrix")
         .text(function(d, i) { return nodes[i].name; });
 
     function row(row) {
@@ -153,5 +156,5 @@ function make_matrix(matrix_name){
   });
 }
 
-make_matrix("id_matrix.csv");
-make_matrix("ld_matrix.csv");
+make_matrix("id_matrix");
+make_matrix("ld_matrix");
