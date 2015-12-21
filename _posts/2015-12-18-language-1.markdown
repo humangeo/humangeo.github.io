@@ -6,11 +6,12 @@ categories: jekyll update
 author: Mahmoud Lababidi
 ---
 
-One of the persitent issues we deal with at HumanGeo is determining the language of a block of text. 
+One of the persistent issues we deal with at HumanGeo is determining the language of a block of text. 
 There are multiple Language Detection (LD) libraries available claiming high accuracy, 
-so building our own wasn't necessary considering these are libraries built by experts in Computational Linguistics. 
-Out of the many choices we were interested in determining the accuracy and performance of the different libraries. 
-In the past we have used the following libraries in various projects:
+so building our own wasn't necessary considering that these are libraries built by experts in Computational Linguistics. 
+Out of the many choices, we were interested in determining the accuracy and performance of the different libraries for
+detecting the language of tweets. 
+In the past, we have used the following libraries in various projects:
 
 - [CLD](https://github.com/mzsanford/cld)
 - [LangID](https://github.com/saffsd/langid.py)
@@ -21,28 +22,30 @@ Recently, we needed to perform LD on text in Java, so we focused our efforts on 
 
 
 ### Process
-To perform Testing on this classification problem, a prelabeled data set of text needs to be used for testing. For this, we use Twitter data that we gathered from the Streaming API.
-Messages from Twitter contain a field for language (`lang`) that has a two-letter ISO code representing the language that Twitter has determined in their process. 
-We understand this language classification by Twitter is not perfect, 
-we will overlook this issue momentarily because the large quantities of categorized data available outweighs these issues.
+To perform Testing on this classification problem, a prelabeled data set of text needs to be used for testing. For this, we use Twitter data that we gathered from the [Twitter Streaming API](https://dev.twitter.com/streaming/overview).
+Messages from Twitter contain a field for language (`lang`) that has a two-letter ISO code representing the language of the tweet that Twitter has determined using their own process. 
+We understand this language classification by Twitter is not perfect, but
+we will overlook this issue momentarily because the large quantities of categorized data available outweigh these issues.
 We will not ignore this issue completely and even study the data Twitter provides at a later time.
-Once we collected adequate data (millions), we take the text of every tweet and remove #hashtags, @mentions, and URLs. 
+Now that we have collected adequate data (millions), we take the text of every tweet and remove #hashtags, @mentions, and URLs.
+Given that these elements have primarily English characters, even in tweets in other languages, we don't want these elements to
+throw off the language detection.
 This filtered text is passed into the two Language Detectors to perform detection. 
 The two detectors each return a list of languages that are ranked from most likely to least likely. 
 The different libraries have a "threshold" value that can filter the returned languages that have a score/probability higher than the threshold value for convenience. 
 
 #### A quick note on probabilities
 Many people request clarifications on what the "probablities" mean. 
-Each language has an associated probability with it. 
+Each language has a probability associated with it. 
 For example, you could get the following as a list of languages for a detection: (en: .6, es: .3, fr: .1).
-These numbers mean English (en) is twice as likely than Spanish (es) to being the probable language
+These numbers mean English (en) is twice as likely as Spanish (es) to being the probable language
 English is also six times more likely than French (fr). 
-Similarly, Spanish is three times as likely than French. 
+Similarly, Spanish is three times as likely as French. 
 The numbers are derived from true probabilities which end up being very small. 
 They are scaled so that they maintain their relative proportions and they sum up to 1.
 
 #### Comparison Code
-The following is the high-level portion of code used the do the main detection and store the results.
+The following is the high-level portion of code used the perform the main detection and store the results.
 This is where the actual detection happens. 
 These blocks were derived from code found in tutorials and examples of the respective libraries.
 
@@ -57,9 +60,9 @@ String text = massageMessage(message),
         detLang;
 {% endhighlight %}
 
-The following is the code that retrieves the top language from LanguageDetection's detection.
-If no language met it's default threshold, a code of `und` was assigned.
-The confusion matrix was updated with the true and detected languages.
+The following block of code retrieves the top language from LanguageDetection's detection.
+If no language met its default threshold, the code assigns a value of `und`.
+The code then updates the confusion matrix with the true and detected languages.
 
 {% highlight java %}
 List<DetectedLanguage> languageOpt = 
@@ -70,8 +73,9 @@ detLang = languageOpt.size() == 0 ? "und" : languageOpt.get(0).getLocale().getLa
 updateMatrix(detectorMatrix, lang, detLang);
 {% endhighlight %}	
 
-The same process is done using LangID as done in Language Detection.
-One difference, a bit of wrangling/sorting is needed to get the top detected language.
+The following block of code uses LangID to perform Language Detection similar to the block
+of code above.
+One difference here is that a bit of wrangling/sorting is needed to get the top detected language.
 
 {% highlight java %}
 langID.classify(text, true);
@@ -95,17 +99,19 @@ Spanish, Portuguese, Japanese, Arabic, Indonesian, Turkish, Russian
 rounding out the top languages with at least 100k total messages.
 
 There are a few differences in the results statistics between the two libraries.
-LanguageDetection seems to opt with `und` more often than LandID.
+LanguageDetection seems to return more `und` values than LangID.
 Having more undetermined identifications lowers the recall score of a category.
 This is seen in several recall scores of LanguageDetection, in particular for English, with a recall score under .5.
-In turn, by potentially removing ambiguities a classifier may improve its precision. 
+In turn, by potentially removing ambiguities, a classifier may improve its precision. 
 Again, LanguageDetection has some precision scores above .9, as seen in English and Spanish.
 
 
 LangID, on the other hand, was willing to make mistakes in the precision, but typically had reasonable recall.
 
 Overall, which library someone would prefer "out of the box" depends on which metric is more important.
-Another way to see this: the classifier can either be very certain about it's decision, while balking any ambiguous text or a classifier is willing to make a guess, though it may be wrong but it does a better job at capturing certain languages.
+Another way to see this: the classifier can either be: 
+* very certain about it's decision, while balking at any ambiguous text
+* ok with fielding a guess even though it may be wrong, with a focus on doing better at capturing certain languages.
 
 
 #### LanguageDetection
@@ -253,7 +259,7 @@ Another way to see this: the classifier can either be very certain about it's de
 Below are the visual Confusion Matrices that represent the categorization totals of each language. 
 The rows are labeled with the "truth" language, while the columns are labeled with detected language.
 Each cell in the matrix is color and transparency coded to represent the relative weight to the other cells in the row.
-The values of the cells are not linear (.1 value -> .9 transparency) but log scaled to bring out low scores to visual any potential clusters.
+The values of the cells are not linear (.1 value -> .9 transparency) but log scaled to bring out low scores and visualize any potential clusters.
 
 The diagonals are labeled as blue because in this view with logarithmic scales, it would not be appropriate to compare and contrast the values of correct detection to the incorrect detections.
 That type of analysis is meant to be done using the recall/precision as shown above.
@@ -263,8 +269,8 @@ The confusion matrices are available for download as csv files:
 [LangID](/download/id_matrix.csv), [LangDetection](/download/ld_matrix.csv) 
 
 The frequency ranking in the dropdown sorts according to the number of "true" texts for each row.
-As stated before the rows get sorted to English, Spanish, Portuguese, Japanese, Arabic, Indonesian, Turkish, Russian. 
-Additionally there is the `und` for "true" language that represents messages that haven't been identified by Twitter.
+As stated before, the rows get sorted to English, Spanish, Portuguese, Japanese, Arabic, Indonesian, Turkish, Russian. 
+Additionally there is the `und` for the "true" language that represents messages that haven't been identified by Twitter.
 
 Some interesting false detections points:
 
@@ -294,8 +300,8 @@ Some interesting false detections points:
 
 ### Concluding Remarks
 
-This study was an overview of a few Language Detection libraries, in particular in Java.
-Though, there is no clear indication of a "better" library, our preference is to use LangID "out of the box" 
+This study was an overview of a few Java-based Language Detection libraries.
+Though there is no clear indication of a "better" library, our preference is to use LangID "out of the box", 
 because it has a reasonable recall score for many languages.
 
 We will delve into other issues such as the true accuracy of Twitter's language detection in the future. 
