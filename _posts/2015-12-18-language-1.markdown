@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Yo Quero Language Detection - Part 1
+title: Yo Quiero Language Detection - Part 1
 date:   2015-12-16 12:17:58 -0500
 categories: jekyll update
 author: Mahmoud Lababidi
